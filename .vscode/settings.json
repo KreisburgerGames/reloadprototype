@@ -51,5 +51,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "dipshit reloading prototype.sln"
+    "dotnet.defaultSolution": "reloadprototype.sln"
 }
