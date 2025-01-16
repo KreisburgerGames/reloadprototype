@@ -36,7 +36,6 @@ public class Weapon : MonoBehaviour
     public Transform HipfirePos;
     public Transform ADSPos;
     private float magAlignInput;
-    private bool emptyChamber = false;
     public float alignDist;
     private float insertInput;
     public float insertDistance;
@@ -60,6 +59,7 @@ public class Weapon : MonoBehaviour
     private float grabbingInput;
     public float grabingSpeed;
     private bool isChambered = true;
+    private Recoil recoil;
 
     void Start()
     {
@@ -67,6 +67,7 @@ public class Weapon : MonoBehaviour
         secondsPerShot = 60f / fireRate;
         magRb = currentMag.GetComponent<Rigidbody>();
         magRb.constraints = RigidbodyConstraints.FreezeAll;
+        recoil = GetComponent<Recoil>();
     }
 
     private IEnumerator AutomaticFire()
@@ -84,8 +85,6 @@ public class Weapon : MonoBehaviour
     {
         int ammoNeeded = magSize - currentAmmo;
         print(ammoNeeded);
-        if (ammoNeeded == magSize){ emptyChamber = true; print("empty"); }
-        else emptyChamber = false;
         if(ammoNeeded <= ammoReserve)
         {
             ammoReserve -= ammoNeeded;
@@ -122,6 +121,7 @@ public class Weapon : MonoBehaviour
             {
                 
             }
+            recoil.RecoilStart();
             if(isAutomatic)
             {
                 StartCoroutine(AutomaticFire());
@@ -290,7 +290,7 @@ public class Weapon : MonoBehaviour
                         currentMag.transform.rotation = Quaternion.Lerp(currentMag.transform.rotation, magInsertPoint.rotation, insertPercentage);
                         if (insertPercentage == 1f)
                         {
-                            if (!emptyChamber) StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.25f));
+                            if (isChambered) StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.25f));
                             else StartCoroutine(SwitchReloadState(ReloadState.BoltOpening, 0.25f));
                             AddBullets();
                         }

@@ -27,6 +27,7 @@ public class LookAndMove : MonoBehaviour
     public Transform orientation;
     bool isJumping = false;
     private Weapon weapon;
+    public Recoil recoil;
 
     void Start()
     {
@@ -69,8 +70,15 @@ public class LookAndMove : MonoBehaviour
         {
             xRot -= mouseInput.y * sensitivity;
             xRot = Mathf.Clamp(xRot, -90, 90);
-            head.transform.localRotation = Quaternion.Euler(xRot, 0, 0);
-            transform.rotation *= Quaternion.Euler(0, mouseInput.x * sensitivity, 0);
+            xRot += recoil.currentRecoil.y;
+            head.transform.localRotation = Quaternion.Euler(xRot, 0, recoil.currentRecoil.z);
+            transform.rotation *= Quaternion.Euler(0, (mouseInput.x * sensitivity) + recoil.currentRecoil.x, 0);
+        }
+        else
+        {
+            xRot += recoil.currentRecoil.y;
+            head.transform.localRotation = Quaternion.Euler(xRot, 0, recoil.currentRecoil.z);
+            transform.rotation *= Quaternion.Euler(0, recoil.currentRecoil.x, 0);
         }
         if(isGrounded)
         {

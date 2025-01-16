@@ -955,6 +955,7 @@ MonoBehaviour:
   frictionCoefficient: 0.15
   gravity: -9.81
   orientation: {fileID: 1044325284}
+  recoil: {fileID: 8533050771262320702}
 --- !u!143 &1458731003
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1195,6 +1196,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8533050771262320700}
   - component: {fileID: 8533050771262320701}
+  - component: {fileID: 8533050771262320702}
   m_Layer: 6
   m_Name: M4Model
   m_TagString: Untagged
@@ -1867,7 +1869,7 @@ MonoBehaviour:
   head: {fileID: 207943356}
   magSize: 30
   ammoReserve: 150
-  fireRate: 1000
+  fireRate: 400
   forceReleaseRate: 1
   magEjectTriggerForce: 1
   gunErgonomics: 10
@@ -1887,6 +1889,54 @@ MonoBehaviour:
   chamberingPoint: {fileID: 1846222562}
   alignPrepDistance: 15
   grabingSpeed: 0.75
+--- !u!114 &8533050771262320702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1203157683353616776}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8da9253d58cb9d44badce1c497c44198, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  recoilCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.049999997
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.099999994
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  recoilX: 5
+  recoilY: {x: -0.33, y: -0.33}
+  recoilZ: 0
+  head: {fileID: 207943355}
+  currentRecoil: {x: 0, y: 0, z: 0}
+  recoilRecoverySpeed: 10
+  recoilSnappiness: 2
+  weaponGameObject: {fileID: 1549865410}
+  WMRecoilTime: 3
+  WMRecoilOffset: -0.165
+  WMRecoilSpeed: 50
+  WMRecoilRecoverySpeed: 3
 --- !u!1 &8565829214103042413 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3355321656623712749, guid: 1e5493313e3ac0e43a12501851629ba6, type: 3}
