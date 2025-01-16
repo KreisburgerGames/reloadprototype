@@ -26,6 +26,7 @@ public class LookAndMove : MonoBehaviour
     public float gravity = -9.81f;
     public Transform orientation;
     bool isJumping = false;
+    private Weapon weapon;
 
     void Start()
     {
@@ -35,6 +36,7 @@ public class LookAndMove : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         speed = walkSpeed;
+        weapon = GetComponentInChildren<Weapon>();
     }
 
     void OnTriggerEnter(Collider other)
@@ -63,7 +65,7 @@ public class LookAndMove : MonoBehaviour
     {
         mouseInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
         keyInput = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
-        if(!Input.GetKey(KeyCode.R))
+        if(!weapon.isReloading && !weapon.adjustingADS)
         {
             xRot -= mouseInput.y * sensitivity;
             xRot = Mathf.Clamp(xRot, -90, 90);
@@ -95,9 +97,14 @@ public class LookAndMove : MonoBehaviour
             acceleration = walkAcceleration;
         }
         velocity += orientation.forward * keyInput.y * acceleration * Time.deltaTime + (orientation.right * keyInput.x * acceleration * Time.deltaTime);
+        velocity.x = Mathf.Clamp(velocity.x, -speed, speed);
+        velocity.y = Mathf.Clamp(velocity.y , -speed, speed);
+    }
+
+    void FixedUpdate()
+    {
         velocity += -velocity * frictionCoefficient;
-        velocity = Vector3.ClampMagnitude(velocity, speed);
         velocity.y = yVel;
-        controller.Move(velocity * Time.deltaTime);
+        controller.Move(velocity);
     }
 }

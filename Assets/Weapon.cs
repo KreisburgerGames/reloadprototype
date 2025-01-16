@@ -1,7 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Weapon : MonoBehaviour
@@ -12,12 +10,11 @@ public class Weapon : MonoBehaviour
     public Transform magEjectPoint;
     public Transform magTakeoutPoint;
     public Transform magPickupPoint;
-    public Transform magRevealPoint;
-    public Transform magAlignPoint;
     public Transform magInsertPoint;
-    public float magTakeoutSpeed;
+    public Transform alignGoal;
+    public Transform alignMovePoint;
     public float magTakeoutHeight;
-    private bool isReloading = false;
+    public bool isReloading = false;
     private ReloadState reloadState = ReloadState.Reloaded;
     public GameObject currentMag;
     public bool isAutomatic;
@@ -36,6 +33,32 @@ public class Weapon : MonoBehaviour
     public float gunErgonomics = 10f;
     private float magTakeoutInput;
     private float magTakeoutProgress;
+    public Transform HipfirePos;
+    public Transform ADSPos;
+    private float magAlignInput;
+    private bool emptyChamber = false;
+    public float alignDist;
+    private float insertInput;
+    public float insertDistance;
+    public float toHipfireTime;
+    private float toHipfireTimer;
+    public bool adjustingADS = false;
+    private float ADSPercentage;
+    public float ADSSpeed;
+    public float ADSDist;
+    private float ADSInput;
+    public GameObject bolt;
+    public Transform closedBolt;
+    public Transform openBolt;
+    public float boltPullDistance;
+    public float boltSnapbackSpeed;
+    private float boltPullInput;
+    public Transform chamberingPoint;
+    private bool pause = false;
+    public float alignPrepDistance;
+    private float alignPrepInput;
+    private float grabbingInput;
+    public float grabingSpeed;
 
     void Start()
     {
@@ -48,19 +71,24 @@ public class Weapon : MonoBehaviour
     private IEnumerator AutomaticFire()
     {
         yield return new WaitForSeconds(secondsPerShot);
+        print("check");
         if(isFiring)
         {
             Fire();
+            print("fire");
         }
     }
 
     private void Reload()
     {
-        if(isReloading || ammoReserve <= 0 || currentAmmo == magSize)
+        if(isReloading || ammoReserve <= 0 || currentAmmo == magSize || reloadState != ReloadState.Reloaded)
         {
             return;
         }
         int ammoNeeded = magSize - currentAmmo;
+        print(ammoNeeded);
+        if (ammoNeeded == magSize){ emptyChamber = true; print("empty"); }
+        else emptyChamber = false;
         if(ammoNeeded <= ammoReserve)
         {
             ammoReserve -= ammoNeeded;
@@ -82,27 +110,46 @@ public class Weapon : MonoBehaviour
             RaycastHit hit;
             if(Physics.Raycast(head.position, head.forward, out hit, range))
             {
-                if(isAutomatic)
-                {
-                    StartCoroutine(AutomaticFire());
-                }
+                
+            }
+            if(isAutomatic)
+            {
+                StartCoroutine(AutomaticFire());
             }
         }
-        else
-        {
-            Reload();
-        }
+    }
+
+    private IEnumerator SwitchReloadState(ReloadState state, float delay)
+    {
+        pause = true;
+        yield return new WaitForSeconds(delay);
+        reloadState = state;
+        pause = false;
     }
 
     void Update()
     {
-        if(isReloading)
+        if(isReloading && Input.GetKey(KeyCode.E) || adjustingADS)
         {
             mouseInput += new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
         }
         else
         {
             mouseInput = Vector2.zero;
+        }
+        if(Input.GetKey(KeyCode.Q) && !isReloading)
+        {
+            adjustingADS = true;
+        }
+        else
+        {
+            adjustingADS = false;
+        }
+        if(adjustingADS)
+        {
+            ADSInput -= Input.GetAxis("Mouse X") * ADSSpeed;
+            ADSInput = Mathf.Clamp(ADSInput, 0, ADSDist);
+            ADSPercentage = ADSInput / ADSDist;
         }
         mouseInput = Vector2.Lerp(mouseInput, Vector2.zero, forceReleaseRate * Time.deltaTime);
         mouseInput.x = MathF.Round(mouseInput.x, 3);
@@ -118,60 +165,176 @@ public class Weapon : MonoBehaviour
         }
         if(Input.GetKeyDown(KeyCode.R))
         {
-            Reload();
-            isReloading = true;
-        }
-        if(Input.GetKeyUp(KeyCode.R))
-        {
-            isReloading = false;
+            if(isReloading)
+            {
+                isReloading = false;
+            }
+            else
+            {
+                Reload();
+                isReloading = true;
+            }
         }
         if(isReloading)
         {
-            switch(reloadState)
-            { 
-                case ReloadState.EjectingMag:
-                    magTakeoutInput = 0f;
+            if(!pause)
+            {
+                if(reloadState != ReloadState.ToHipfire && reloadState != ReloadState.BoltOpening && reloadState != ReloadState.BoltClosing)
+                {
                     transform.position = Vector3.Lerp(transform.position, magEjectPoint.position, gunErgonomics * Time.deltaTime);
                     transform.rotation = Quaternion.Lerp(transform.rotation, magEjectPoint.rotation, gunErgonomics * Time.deltaTime);
-                    if(mouseInput.x >= magEjectTriggerForce)
-                    {
-                        currentMag.transform.parent = null;
-                        magRb.constraints = RigidbodyConstraints.None;
-                        magRb.AddForce(magEjectDirection * magEjectForce, ForceMode.Impulse);
-                        reloadState = ReloadState.GrabbingMag;
-                    }
-                break;
+                }
+                else if(reloadState == ReloadState.BoltOpening || reloadState == ReloadState.BoltClosing)
+                {
+                    transform.position = Vector3.Lerp(transform.position, chamberingPoint.position, gunErgonomics * Time.deltaTime);
+                    transform.rotation = Quaternion.Lerp(transform.rotation, chamberingPoint.rotation, gunErgonomics * Time.deltaTime);
+                }
+                switch(reloadState)
+                {
+                    case ReloadState.EjectingMag:
+                        magTakeoutInput = 0f;
+                        magAlignInput = 0f;
+                        magTakeoutProgress = 0f;
+                        insertInput = 0f;
+                        toHipfireTimer = 0f;
+                        boltPullInput = 0f;
+                        alignPrepInput = 0f;
+                        grabbingInput = 0f;
+                        
+                        if(mouseInput.x >= magEjectTriggerForce)
+                        {
+                            currentMag.transform.parent = null;
+                            magRb.constraints = RigidbodyConstraints.None;
+                            magRb.AddForce(magEjectDirection * magEjectForce, ForceMode.Impulse);
+                            reloadState = ReloadState.GrabbingMag;
+                        }
+                    break;
 
-                case ReloadState.GrabbingMag:
-                    if(mouseInput.y >= 3f)
-                    {
-                        currentMag = Instantiate(magPrefab, magPickupPoint.position, magPickupPoint.rotation);
-                        magRb = currentMag.GetComponent<Rigidbody>();
-                        magRb.constraints = RigidbodyConstraints.FreezeAll;
-                        currentMag.transform.parent = transform;
-                        reloadState = ReloadState.RevealingMag;
-                    }
-                break;
+                    case ReloadState.GrabbingMag:
+                        if(Input.GetKey(KeyCode.G)) grabbingInput += Input.GetAxis("Mouse Y");
+                        grabbingInput = Mathf.Lerp(grabbingInput, 0, forceReleaseRate * Time.deltaTime);
+                        grabbingInput = MathF.Round(grabbingInput, 3);
+                        if (grabbingInput >= grabingSpeed)
+                        {
+                            currentMag = Instantiate(magPrefab, magPickupPoint.position, magPickupPoint.rotation);
+                            magRb = currentMag.GetComponent<Rigidbody>();
+                            magRb.constraints = RigidbodyConstraints.FreezeAll;
+                            currentMag.transform.parent = transform;
+                            currentMag.transform.localScale = new Vector3(100f, 100f, 100f);
+                            reloadState = ReloadState.RevealingMag;
+                        }
+                    break;
 
-                case ReloadState.RevealingMag:
-                    magTakeoutInput += Input.GetAxis("Mouse Y") * magTakeoutSpeed;
-                    magTakeoutProgress = magTakeoutInput/magTakeoutHeight;
-                    currentMag.transform.position = Vector3.Lerp(magPickupPoint.position, magTakeoutPoint.position, magTakeoutProgress);
-                    if(currentMag.transform.position == magTakeoutPoint.position)
-                    {
-                        reloadState = ReloadState.AlignPrep;
-                    }
-                break;
+                    case ReloadState.RevealingMag:
+                        if(Input.GetKey(KeyCode.Z))
+                        {
+                            magTakeoutInput += Input.GetAxis("Mouse Y");
+                            print("e");
+                        }
+                        magTakeoutInput = Mathf.Clamp(magTakeoutInput, 0 , magTakeoutHeight);
+                        magTakeoutProgress = magTakeoutInput/magTakeoutHeight;
+                        currentMag.transform.position = Vector3.Lerp(magPickupPoint.position, magTakeoutPoint.position, magTakeoutProgress);
+                        if(currentMag.transform.position == magTakeoutPoint.position)
+                        {
+                            reloadState = ReloadState.AlignPrep;
+                        }
+                    break;
 
-                case ReloadState.AligningMag:
+                    case ReloadState.AlignPrep:
+                        if(Input.GetKey(KeyCode.F))
+                        {
+                            alignPrepInput += Input.GetAxis("Mouse X");
+                        }
+                        alignPrepInput = Mathf.Clamp(alignPrepInput, 0, alignPrepDistance);
+                        float alignPrepPercentage = alignPrepInput / alignPrepDistance;
+                        currentMag.transform.position = Vector3.Lerp(magTakeoutPoint.position, alignGoal.position, alignPrepPercentage);
+                        currentMag.transform.rotation = Quaternion.Lerp(magTakeoutPoint.rotation, alignGoal.rotation, alignPrepPercentage);
+                        if(alignPrepPercentage == 1f)
+                        {
+                            reloadState = ReloadState.AligningMag;
+                        }
+                    break;
 
-                break;
+                    case ReloadState.AligningMag:
+                        if(!Input.GetKey(KeyCode.F) && !Input.GetKey(KeyCode.X))
+                        {
+                            magAlignInput += Input.GetAxis("Mouse X");
+                        }
+                        magAlignInput = Mathf.Clamp(magAlignInput, 0, alignDist);
+                        float magAlignPercentage = magAlignInput / alignDist;
+                        currentMag.transform.position = Vector3.Lerp(alignGoal.position, alignMovePoint.position, magAlignPercentage);
+                        if (magAlignPercentage == 1f) reloadState = ReloadState.InsertingMag;
+                        break;
+                    case ReloadState.InsertingMag:
+                        if(Input.GetKey(KeyCode.X))
+                        {
+                            insertInput += Input.GetAxis("Mouse Y");
+                        }
+                        insertInput = Mathf.Clamp(insertInput, 0, insertDistance);
+                        float insertPercentage = insertInput / insertDistance;
+                        currentMag.transform.position = Vector3.Lerp(alignMovePoint.position, magInsertPoint.position, insertPercentage);
+                        currentMag.transform.rotation = Quaternion.Lerp(currentMag.transform.rotation, magInsertPoint.rotation, insertPercentage);
+                        if (insertPercentage == 1f)
+                        {
+                            if (!emptyChamber) StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.25f));
+                            else StartCoroutine(SwitchReloadState(ReloadState.BoltOpening, 0.25f));
+                        }
+                    break;
 
-                case ReloadState.InsertingMag:
-                
-                break;
+                    case ReloadState.BoltOpening:
+                        if(Input.GetMouseButton(0))
+                        {
+                            boltPullInput -= Input.GetAxis("Mouse Y");
+                            boltPullInput = Mathf.Clamp(boltPullInput, 0, boltPullDistance);
+                        }
+                        else
+                        {
+                            boltPullInput = Mathf.MoveTowards(boltPullInput, 0, boltSnapbackSpeed * Time.deltaTime);
+                        }
+                        float boltPullPercentage = boltPullInput / boltPullDistance;
+                        bolt.transform.position = Vector3.Lerp(closedBolt.position, openBolt.position, boltPullPercentage);
+                        if(boltPullPercentage == 1f) reloadState = ReloadState.BoltClosing;
+                        break;
+
+                    case ReloadState.BoltClosing:
+                        if(Input.GetMouseButton(0))
+                        {
+                            boltPullInput -= Input.GetAxis("Mouse Y");
+                            boltPullInput = Mathf.Clamp(boltPullInput, 0, boltPullDistance);
+                        }
+                        else
+                        {
+                            boltPullInput = Mathf.MoveTowards(boltPullInput, 0, boltSnapbackSpeed * Time.deltaTime);
+                        }
+                        float boltClosePercentage = boltPullInput / boltPullDistance;
+                        bolt.transform.position = Vector3.Lerp(closedBolt.position, openBolt.position, boltClosePercentage);
+                        if(boltClosePercentage == 0f) StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.1f));
+                    break;
+                }
             }
         }
+        else if(!pause)
+        {
+            Vector3 targetADSPos = Vector3.Lerp(HipfirePos.position, ADSPos.position, ADSPercentage);
+            Quaternion targetADSRot = Quaternion.Lerp(HipfirePos.rotation, ADSPos.rotation, ADSPercentage);
+            transform.position = Vector3.Lerp(transform.position, targetADSPos, ADSSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetADSRot, ADSSpeed * Time.deltaTime);
+        }
+        if(reloadState == ReloadState.ToHipfire && !pause)
+        {
+            toHipfireTimer += Time.deltaTime;
+            toHipfireTimer = Mathf.Clamp(toHipfireTimer, 0, toHipfireTime);
+            float toHipPercentage = toHipfireTimer / toHipfireTime;
+            transform.position = Vector3.Lerp(transform.position, HipfirePos.position, toHipPercentage);
+            transform.rotation = Quaternion.Lerp(transform.rotation, HipfirePos.rotation, toHipPercentage);
+            print(toHipPercentage);
+            if(toHipPercentage == 1f)
+            {
+                isReloading = false;
+                reloadState = ReloadState.Reloaded;
+            }
+        }
+            
     }
 
     public enum ReloadState
@@ -183,6 +346,9 @@ public class Weapon : MonoBehaviour
         AlignPrep,
         EjectingMag,
         EjectedMag,
+        BoltOpening,
+        BoltClosing,
+        ToHipfire,
         Reloaded
     }
 }
