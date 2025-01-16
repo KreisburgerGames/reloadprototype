@@ -59,6 +59,7 @@ public class Weapon : MonoBehaviour
     private float alignPrepInput;
     private float grabbingInput;
     public float grabingSpeed;
+    private bool isChambered = true;
 
     void Start()
     {
@@ -79,12 +80,8 @@ public class Weapon : MonoBehaviour
         }
     }
 
-    private void Reload()
+    private void AddBullets()
     {
-        if(isReloading || ammoReserve <= 0 || currentAmmo == magSize || reloadState != ReloadState.Reloaded)
-        {
-            return;
-        }
         int ammoNeeded = magSize - currentAmmo;
         print(ammoNeeded);
         if (ammoNeeded == magSize){ emptyChamber = true; print("empty"); }
@@ -99,14 +96,27 @@ public class Weapon : MonoBehaviour
             currentAmmo += ammoReserve;
             ammoReserve = 0;
         }
+    }
+
+    private void Reload()
+    {
+        if(isReloading || ammoReserve <= 0 || currentAmmo == magSize || reloadState != ReloadState.Reloaded)
+        {
+            return;
+        }
         reloadState = ReloadState.EjectingMag;
     }
 
     private void Fire()
     {
-        if(currentAmmo > 0)
+        if(isChambered)
         {
-            currentAmmo--;
+            isChambered = false;
+            if(currentAmmo > 0)
+            {
+                isChambered = true;
+                currentAmmo--;
+            }
             RaycastHit hit;
             if(Physics.Raycast(head.position, head.forward, out hit, range))
             {
@@ -154,7 +164,7 @@ public class Weapon : MonoBehaviour
         mouseInput = Vector2.Lerp(mouseInput, Vector2.zero, forceReleaseRate * Time.deltaTime);
         mouseInput.x = MathF.Round(mouseInput.x, 3);
         mouseInput.y = MathF.Round(mouseInput.y, 3);
-        if(Input.GetMouseButtonDown(0) && !isReloading)
+        if(Input.GetMouseButtonDown(0) && (reloadState == ReloadState.Reloaded || reloadState == ReloadState.EjectingMag))
         {
             isFiring = true;
             Fire();
@@ -206,6 +216,7 @@ public class Weapon : MonoBehaviour
                             currentMag.transform.parent = null;
                             magRb.constraints = RigidbodyConstraints.None;
                             magRb.AddForce(magEjectDirection * magEjectForce, ForceMode.Impulse);
+                            currentAmmo = 0;
                             reloadState = ReloadState.GrabbingMag;
                         }
                     break;
@@ -263,7 +274,10 @@ public class Weapon : MonoBehaviour
                         magAlignInput = Mathf.Clamp(magAlignInput, 0, alignDist);
                         float magAlignPercentage = magAlignInput / alignDist;
                         currentMag.transform.position = Vector3.Lerp(alignGoal.position, alignMovePoint.position, magAlignPercentage);
-                        if (magAlignPercentage == 1f) reloadState = ReloadState.InsertingMag;
+                        if (magAlignPercentage == 1f) 
+                        {
+                            reloadState = ReloadState.InsertingMag;
+                        }
                         break;
                     case ReloadState.InsertingMag:
                         if(Input.GetKey(KeyCode.X))
@@ -278,6 +292,7 @@ public class Weapon : MonoBehaviour
                         {
                             if (!emptyChamber) StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.25f));
                             else StartCoroutine(SwitchReloadState(ReloadState.BoltOpening, 0.25f));
+                            AddBullets();
                         }
                     break;
 
@@ -308,7 +323,12 @@ public class Weapon : MonoBehaviour
                         }
                         float boltClosePercentage = boltPullInput / boltPullDistance;
                         bolt.transform.position = Vector3.Lerp(closedBolt.position, openBolt.position, boltClosePercentage);
-                        if(boltClosePercentage == 0f) StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.1f));
+                        if(boltClosePercentage == 0f) 
+                        {
+                            isChambered = true;
+                            currentAmmo --;
+                            StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.1f));
+                        }
                     break;
                 }
             }
