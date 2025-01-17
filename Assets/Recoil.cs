@@ -49,8 +49,10 @@ public class Recoil : MonoBehaviour
         }
         else
         {
-            currentRecoil = Vector3.Lerp(currentRecoil, Vector3.zero, recoilRecoverySpeed * Time.deltaTime);
+            targetRecoil = Vector3.Lerp(currentRecoil, Vector3.zero, recoilRecoverySpeed * Time.deltaTime);
+            currentRecoil = targetRecoil;
         }
+        
         if(WMRecoiling)
         {
             WMRecoilTimer += Time.deltaTime * WMRecoilSpeed;

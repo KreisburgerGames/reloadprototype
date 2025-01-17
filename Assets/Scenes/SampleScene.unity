@@ -1925,17 +1925,17 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  recoilX: 5
-  recoilY: {x: -0.33, y: -0.33}
+  recoilX: 3
+  recoilY: {x: -3, y: -3}
   recoilZ: 0
   head: {fileID: 207943355}
   currentRecoil: {x: 0, y: 0, z: 0}
-  recoilRecoverySpeed: 10
-  recoilSnappiness: 2
+  recoilRecoverySpeed: 5
+  recoilSnappiness: 5
   weaponGameObject: {fileID: 1549865410}
   WMRecoilTime: 3
   WMRecoilOffset: -0.165
-  WMRecoilSpeed: 50
+  WMRecoilSpeed: 30
   WMRecoilRecoverySpeed: 3
 --- !u!1 &8565829214103042413 stripped
 GameObject:
