@@ -46,7 +46,7 @@ public class Weapon : MonoBehaviour
     public float ADSSpeed;
     public float ADSDist;
     private float ADSInput;
-    public GameObject bolt;
+    public GameObject chargingHandle;
     public Transform closedBolt;
     public Transform openBolt;
     public float boltPullDistance;
@@ -60,6 +60,15 @@ public class Weapon : MonoBehaviour
     public float grabingSpeed;
     private bool isChambered = true;
     private Recoil recoil;
+    public GameObject bolt;
+    public Transform lockedBolt;
+    public Transform boltReleasedPos;
+    public float lockedBoltSpeed;
+    public float boltReleasedSpeed;
+    public bool canBoltRelease;
+    private bool isBoltRelease;
+    public float boltReleaseForce;
+
 
     void Start()
     {
@@ -73,18 +82,16 @@ public class Weapon : MonoBehaviour
     private IEnumerator AutomaticFire()
     {
         yield return new WaitForSeconds(secondsPerShot);
-        print("check");
-        if(isFiring)
+        if(isFiring && CheckCanFire())
         {
             Fire();
-            print("fire");
         }
+        else isFiring = false;
     }
 
     private void AddBullets()
     {
         int ammoNeeded = magSize - currentAmmo;
-        print(ammoNeeded);
         if(ammoNeeded <= ammoReserve)
         {
             ammoReserve -= ammoNeeded;
@@ -137,8 +144,18 @@ public class Weapon : MonoBehaviour
         pause = false;
     }
 
+    private bool CheckCanFire()
+    {
+        if(Input.GetMouseButton(0) && isChambered && !isReloading) return true;
+        return false;
+    }
+
     void Update()
     {
+        if(!isChambered && !isReloading)
+        {
+            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
+        }
         if(isReloading && Input.GetKey(KeyCode.E) || adjustingADS)
         {
             mouseInput += new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
@@ -164,7 +181,7 @@ public class Weapon : MonoBehaviour
         mouseInput = Vector2.Lerp(mouseInput, Vector2.zero, forceReleaseRate * Time.deltaTime);
         mouseInput.x = MathF.Round(mouseInput.x, 3);
         mouseInput.y = MathF.Round(mouseInput.y, 3);
-        if(Input.GetMouseButtonDown(0) && (reloadState == ReloadState.Reloaded || reloadState == ReloadState.EjectingMag))
+        if(CheckCanFire() && Input.GetMouseButtonDown(0))
         {
             isFiring = true;
             Fire();
@@ -210,6 +227,12 @@ public class Weapon : MonoBehaviour
                         boltPullInput = 0f;
                         alignPrepInput = 0f;
                         grabbingInput = 0f;
+                        bolt.transform.parent = gameObject.transform;
+
+                        if(!isChambered)
+                        {
+                            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
+                        }
                         
                         if(mouseInput.x >= magEjectTriggerForce)
                         {
@@ -225,6 +248,17 @@ public class Weapon : MonoBehaviour
                         if(Input.GetKey(KeyCode.G)) grabbingInput += Input.GetAxis("Mouse Y");
                         grabbingInput = Mathf.Lerp(grabbingInput, 0, forceReleaseRate * Time.deltaTime);
                         grabbingInput = MathF.Round(grabbingInput, 3);
+
+                        if(!isChambered)
+                        {
+                            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
+                        }
+
+                        if(!isChambered)
+                        {
+                            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
+                        }
+
                         if (grabbingInput >= grabingSpeed)
                         {
                             currentMag = Instantiate(magPrefab, magPickupPoint.position, magPickupPoint.rotation);
@@ -240,7 +274,11 @@ public class Weapon : MonoBehaviour
                         if(Input.GetKey(KeyCode.Z))
                         {
                             magTakeoutInput += Input.GetAxis("Mouse Y");
-                            print("e");
+                        }
+
+                        if(!isChambered)
+                        {
+                            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
                         }
                         magTakeoutInput = Mathf.Clamp(magTakeoutInput, 0 , magTakeoutHeight);
                         magTakeoutProgress = magTakeoutInput/magTakeoutHeight;
@@ -256,6 +294,10 @@ public class Weapon : MonoBehaviour
                         {
                             alignPrepInput += Input.GetAxis("Mouse X");
                         }
+                        if(!isChambered)
+                        {
+                            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
+                        }
                         alignPrepInput = Mathf.Clamp(alignPrepInput, 0, alignPrepDistance);
                         float alignPrepPercentage = alignPrepInput / alignPrepDistance;
                         currentMag.transform.position = Vector3.Lerp(magTakeoutPoint.position, alignGoal.position, alignPrepPercentage);
@@ -270,6 +312,10 @@ public class Weapon : MonoBehaviour
                         if(!Input.GetKey(KeyCode.F) && !Input.GetKey(KeyCode.X))
                         {
                             magAlignInput += Input.GetAxis("Mouse X");
+                        }
+                        if(!isChambered)
+                        {
+                            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
                         }
                         magAlignInput = Mathf.Clamp(magAlignInput, 0, alignDist);
                         float magAlignPercentage = magAlignInput / alignDist;
@@ -297,6 +343,11 @@ public class Weapon : MonoBehaviour
                     break;
 
                     case ReloadState.BoltOpening:
+                        if(Input.GetAxisRaw("Mouse X") > boltReleaseForce && canBoltRelease)
+                        {
+                            reloadState = ReloadState.BoltClosing;
+                            isBoltRelease = true;
+                        }
                         if(Input.GetMouseButton(0))
                         {
                             boltPullInput -= Input.GetAxis("Mouse Y");
@@ -306,8 +357,9 @@ public class Weapon : MonoBehaviour
                         {
                             boltPullInput = Mathf.MoveTowards(boltPullInput, 0, boltSnapbackSpeed * Time.deltaTime);
                         }
+                        bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
                         float boltPullPercentage = boltPullInput / boltPullDistance;
-                        bolt.transform.position = Vector3.Lerp(closedBolt.position, openBolt.position, boltPullPercentage);
+                        chargingHandle.transform.position = Vector3.Lerp(closedBolt.position, openBolt.position, boltPullPercentage);
                         if(boltPullPercentage == 1f) reloadState = ReloadState.BoltClosing;
                         break;
 
@@ -321,8 +373,21 @@ public class Weapon : MonoBehaviour
                         {
                             boltPullInput = Mathf.MoveTowards(boltPullInput, 0, boltSnapbackSpeed * Time.deltaTime);
                         }
+                        bolt.transform.parent = chargingHandle.transform;
+                        if(isBoltRelease)
+                        {
+                            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, boltReleasedPos.position, boltReleasedSpeed * Time.deltaTime);
+                            if(bolt.transform.position == boltReleasedPos.position)
+                            {
+                                isBoltRelease = false;
+                                isChambered = true;
+                                currentAmmo --;
+                                StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.1f));
+                            }
+                            break;
+                        }
                         float boltClosePercentage = boltPullInput / boltPullDistance;
-                        bolt.transform.position = Vector3.Lerp(closedBolt.position, openBolt.position, boltClosePercentage);
+                        chargingHandle.transform.position = Vector3.Lerp(closedBolt.position, openBolt.position, boltClosePercentage);
                         if(boltClosePercentage == 0f) 
                         {
                             isChambered = true;
@@ -347,7 +412,6 @@ public class Weapon : MonoBehaviour
             float toHipPercentage = toHipfireTimer / toHipfireTime;
             transform.position = Vector3.Lerp(transform.position, HipfirePos.position, toHipPercentage);
             transform.rotation = Quaternion.Lerp(transform.rotation, HipfirePos.rotation, toHipPercentage);
-            print(toHipPercentage);
             if(toHipPercentage == 1f)
             {
                 isReloading = false;
