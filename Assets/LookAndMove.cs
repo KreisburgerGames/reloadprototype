@@ -54,7 +54,7 @@ public class LookAndMove : NetworkBehaviour
         {
             foreach(GameObject obj in othersOnly) obj.SetActive(false);
             Namer namer = FindFirstObjectByType<Namer>();
-            if (namer.currentName != null && namer.currentName != "") playerName.Value = namer.currentName; else playerName.Value = "Player " + NetworkManager.LocalClientId.ToString();
+            if (namer.currentName != null && namer.currentName != "") playerName.Value = namer.currentName; else playerName.Value = "Player " +(Convert.ToInt32(NetworkManager.LocalClientId) + 1).ToString();
             namer.localPlayerRef = gameObject;
         }
     }
