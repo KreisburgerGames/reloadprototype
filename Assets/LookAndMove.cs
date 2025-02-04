@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class LookAndMove : MonoBehaviour
+public class LookAndMove : NetworkBehaviour
 {
     public float sensitivity;
     public float walkSpeed;
@@ -28,6 +29,8 @@ public class LookAndMove : MonoBehaviour
     bool isJumping = false;
     private Weapon weapon;
     public Recoil recoil;
+    public List<GameObject> localOnly = new List<GameObject>();
+    public List<GameObject> othersOnly = new List<GameObject>();
 
     void Start()
     {
@@ -38,6 +41,15 @@ public class LookAndMove : MonoBehaviour
         Cursor.visible = false;
         speed = walkSpeed;
         weapon = GetComponentInChildren<Weapon>();
+        if(!IsLocalPlayer) 
+        {
+            foreach(GameObject obj in localOnly) obj.SetActive(false);
+            enabled = false;
+        }
+        else
+        {
+            foreach(GameObject obj in othersOnly) obj.SetActive(false);
+        }
     }
 
     void OnTriggerEnter(Collider other)
@@ -113,6 +125,6 @@ public class LookAndMove : MonoBehaviour
     {
         velocity += -velocity * frictionCoefficient;
         velocity.y = yVel;
-        controller.Move(velocity);
+        controller.Move(velocity * Time.fixedDeltaTime);
     }
 }
