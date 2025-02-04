@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -31,6 +33,8 @@ public class LookAndMove : NetworkBehaviour
     public Recoil recoil;
     public List<GameObject> localOnly = new List<GameObject>();
     public List<GameObject> othersOnly = new List<GameObject>();
+    public NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public TextMeshPro nametag;
 
     void Start()
     {
@@ -44,16 +48,27 @@ public class LookAndMove : NetworkBehaviour
         if(!IsLocalPlayer) 
         {
             foreach(GameObject obj in localOnly) obj.SetActive(false);
-            enabled = false;
+            StartCoroutine(WaitForNametag());
         }
         else
         {
             foreach(GameObject obj in othersOnly) obj.SetActive(false);
+            Namer namer = FindFirstObjectByType<Namer>();
+            if (namer.currentName != null && namer.currentName != "") playerName.Value = namer.currentName; else playerName.Value = "Player " + NetworkManager.LocalClientId.ToString();
+            namer.localPlayerRef = gameObject;
         }
+    }
+
+    private IEnumerator WaitForNametag()
+    {
+        while(playerName.Value == "") yield return null;
+        nametag.text = playerName.Value.ToString();
+        enabled = false;
     }
 
     void OnTriggerEnter(Collider other)
     {
+        if(!IsLocalPlayer) return;
         if(other.gameObject.tag == "Ground")
         {
             groundObjects.Add(other.gameObject);
@@ -63,6 +78,7 @@ public class LookAndMove : NetworkBehaviour
 
     void OnTriggerExit(Collider other)
     {
+        if(!IsLocalPlayer) return;
         if(other.gameObject.tag == "Ground")
         {
             groundObjects.Remove(other.gameObject);
@@ -76,6 +92,7 @@ public class LookAndMove : NetworkBehaviour
 
     void Update()
     {
+        if(!IsLocalPlayer) return;
         mouseInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
         keyInput = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
         if(!weapon.isReloading && !weapon.adjustingADS)
