@@ -1,12 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Photon.Pun;
+using Photon.Realtime;
 using TMPro;
 using Unity.Collections;
-using Unity.Netcode;
 using UnityEngine;
 
-public class LookAndMove : NetworkBehaviour
+public class LookAndMove : MonoBehaviour
 {
     public float sensitivity;
     public float walkSpeed;
@@ -33,11 +34,15 @@ public class LookAndMove : NetworkBehaviour
     public Recoil recoil;
     public List<GameObject> localOnly = new List<GameObject>();
     public List<GameObject> othersOnly = new List<GameObject>();
-    public NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public TextMeshPro nametag;
+    public bool IsLocalPlayer;
+    private RoomJoiner roomJoiner;
+    private PhotonView network;
+    private string username;
 
     void Start()
     {
+        roomJoiner = FindFirstObjectByType<RoomJoiner>();
         controller = GetComponent<CharacterController>();
         groundObjects = new List<GameObject>();
         isGrounded = false;
@@ -48,22 +53,22 @@ public class LookAndMove : NetworkBehaviour
         if(!IsLocalPlayer) 
         {
             foreach(GameObject obj in localOnly) obj.SetActive(false);
-            StartCoroutine(WaitForNametag());
         }
         else
         {
+            network = GetComponent<PhotonView>();
             foreach(GameObject obj in othersOnly) obj.SetActive(false);
             Namer namer = FindFirstObjectByType<Namer>();
-            if (namer.currentName != null && namer.currentName != "") playerName.Value = namer.currentName; else playerName.Value = "Player " +(Convert.ToInt32(NetworkManager.LocalClientId) + 1).ToString();
+            if (namer.currentName != null && namer.currentName != "") username = namer.currentName; else username = "Player " + network.ViewID.ToString();
             namer.localPlayerRef = gameObject;
+            network.RPC("SetName", RpcTarget.AllBuffered, username);
         }
     }
 
-    private IEnumerator WaitForNametag()
+    [PunRPC]
+    public void SetName(string name)
     {
-        while(playerName.Value == "") yield return null;
-        nametag.text = playerName.Value.ToString();
-        enabled = false;
+        nametag.text = name;
     }
 
     void OnTriggerEnter(Collider other)
@@ -140,6 +145,7 @@ public class LookAndMove : NetworkBehaviour
 
     void FixedUpdate()
     {
+        if(!IsLocalPlayer) return;
         velocity += -velocity * frictionCoefficient;
         velocity.y = yVel;
         controller.Move(velocity * Time.fixedDeltaTime);
