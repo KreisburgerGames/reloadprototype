@@ -38,7 +38,7 @@ public class LookAndMove : MonoBehaviour
     public bool IsLocalPlayer;
     private RoomJoiner roomJoiner;
     private PhotonView network;
-    private string username;
+    public string username { get; private set; }
 
     void Start()
     {

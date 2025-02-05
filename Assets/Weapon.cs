@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
+using Photon.Pun;
 using UnityEngine;
 
 public class Weapon : MonoBehaviour
 {
+    private PhotonView network;
     public GameObject magPrefab;
     public Vector3 magEjectDirection;
     public float magEjectForce;
@@ -68,15 +70,20 @@ public class Weapon : MonoBehaviour
     public bool canBoltRelease;
     private bool isBoltRelease;
     public float boltReleaseForce;
+    private string reloadAlert;
+    private LookAndMove playerMovement;
 
 
     void Start()
     {
+        playerMovement = GetComponentInParent<LookAndMove>();
+        network = GetComponentInParent<PhotonView>();
         currentAmmo = magSize;
         secondsPerShot = 60f / fireRate;
         magRb = currentMag.GetComponent<Rigidbody>();
         magRb.constraints = RigidbodyConstraints.FreezeAll;
         recoil = GetComponent<Recoil>();
+        reloadAlert = playerMovement.username + " has ejected their mag";
     }
 
     private IEnumerator AutomaticFire()
@@ -236,6 +243,8 @@ public class Weapon : MonoBehaviour
                         
                         if(mouseInput.x >= magEjectTriggerForce)
                         {
+                            network.RPC("CreateAlertRpc", RpcTarget.All, reloadAlert);
+
                             currentMag.transform.parent = null;
                             magRb.constraints = RigidbodyConstraints.None;
                             magRb.AddForce(magEjectDirection * magEjectForce, ForceMode.Impulse);
