@@ -20,6 +20,7 @@ public class ThirdPersonWeaponManager : MonoBehaviour
                 break;
             case "reload":
                 thirdPersonWeapon.transform.position = reload.position;
+                thirdPersonWeapon.transform.rotation = reload.rotation;
                 break;
         }
     }

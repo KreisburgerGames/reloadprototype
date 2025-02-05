@@ -60,7 +60,7 @@ public class LookAndMove : MonoBehaviour
             network = GetComponent<PhotonView>();
             foreach(GameObject obj in othersOnly) obj.SetActive(false);
             Namer namer = FindFirstObjectByType<Namer>();
-            if (namer.currentName != null && namer.currentName != "") username = namer.currentName; else username = "Player " + network.ViewID.ToString();
+            if (namer.currentName != null && namer.currentName != "") username = namer.currentName; else username = "Player " + network.ViewID.ToString()[0];
             namer.localPlayerRef = gameObject;
             network.RPC("SetName", RpcTarget.AllBuffered, username);
         }

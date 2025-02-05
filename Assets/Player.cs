@@ -44,4 +44,16 @@ public class Player : MonoBehaviour
         Alert alert = Instantiate(alertPrefab, alertViewport).GetComponent<Alert>();
         alert.Init(alertText);
     }
+
+    void Update()
+    {
+        if(!playerMovement.IsLocalPlayer) return;
+
+        if(Input.GetKeyDown(KeyCode.M))
+        {
+            Cursor.visible = !Cursor.visible;
+
+            if(Cursor.visible) Cursor.lockState = CursorLockMode.None; else Cursor.lockState = CursorLockMode.Locked;
+        }
+    }
 }

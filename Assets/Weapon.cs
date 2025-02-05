@@ -202,12 +202,13 @@ public class Weapon : MonoBehaviour
             if(isReloading)
             {
                 isReloading = false;
+                network.RPC("ChangeWeaponPosRpc", RpcTarget.Others, "hip");
             }
             else
             {
                 Reload();
                 isReloading = true;
-                network.RPC("ChangePosRpc", RpcTarget.Others, "reload");
+                network.RPC("ChangeWeaponPosRpc", RpcTarget.Others, "reload");
             }
         }
         if(isReloading)
@@ -241,7 +242,7 @@ public class Weapon : MonoBehaviour
                             bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
                         }
                         
-                        if(mouseInput.x >= magEjectTriggerForce)
+                        if(mouseInput.x >= magEjectTriggerForce || Input.GetKeyDown(KeyCode.P))
                         {
                             network.RPC("CreateAlertRpc", RpcTarget.All, reloadAlert);
                             network.RPC("ChangeMagVisibleRpc", RpcTarget.Others, false);
@@ -403,7 +404,7 @@ public class Weapon : MonoBehaviour
                         {
                             isChambered = true;
                             currentAmmo --;
-                            network.RPC("ChangePosRpc", RpcTarget.Others, "hip");
+                            network.RPC("ChangeWeaponPosRpc", RpcTarget.Others, "hip");
                             StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.1f));
                         }
                     break;

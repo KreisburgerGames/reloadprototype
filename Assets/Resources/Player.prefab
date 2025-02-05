@@ -458,7 +458,7 @@ MonoBehaviour:
   ammoReserve: 150
   fireRate: 400
   forceReleaseRate: 1
-  magEjectTriggerForce: 1
+  magEjectTriggerForce: 3
   gunErgonomics: 10
   HipfirePos: {fileID: 7797451879927005556}
   ADSPos: {fileID: 297239268169167686}
@@ -2920,12 +2920,12 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  _SortingLayer: 0
-  _SortingLayerID: 0
-  _SortingOrder: 0
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 6978933400810514597}
   m_maskType: 0
+  _SortingLayer: 0
+  _SortingLayerID: 0
+  _SortingOrder: 0
 --- !u!114 &5839725559616100306
 MonoBehaviour:
   m_ObjectHideFlags: 0
