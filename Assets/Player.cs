@@ -10,6 +10,7 @@ public class Player : MonoBehaviour
     [SerializeField] private Transform alertViewport;
     [SerializeField] private GameObject alertPrefab;
     private LookAndMove playerMovement;
+    public ThirdPersonWeaponManager manager;
 
     void Start()
     {
@@ -23,6 +24,18 @@ public class Player : MonoBehaviour
         {
             player.CreateAlertLocal(alertText);
         }
+    }
+
+    [PunRPC]
+    public void ChangeWeaponPosRpc(string pos)
+    {
+        manager.ChangePos(pos);
+    }
+
+    [PunRPC]
+    public void ChangeMagVisibleRpc(bool visible)
+    {
+        manager.ChangeMagVisible(visible);
     }
 
     private void CreateAlertLocal(string alertText)

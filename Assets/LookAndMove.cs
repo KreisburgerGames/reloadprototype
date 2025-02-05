@@ -39,6 +39,7 @@ public class LookAndMove : MonoBehaviour
     private RoomJoiner roomJoiner;
     private PhotonView network;
     public string username { get; private set; }
+    [SerializeField] private ThirdPersonWeaponManager thirdPersonWeaponManager;
 
     void Start()
     {

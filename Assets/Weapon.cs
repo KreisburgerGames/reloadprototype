@@ -207,6 +207,7 @@ public class Weapon : MonoBehaviour
             {
                 Reload();
                 isReloading = true;
+                network.RPC("ChangePosRpc", RpcTarget.Others, "reload");
             }
         }
         if(isReloading)
@@ -235,7 +236,6 @@ public class Weapon : MonoBehaviour
                         alignPrepInput = 0f;
                         grabbingInput = 0f;
                         bolt.transform.parent = gameObject.transform;
-
                         if(!isChambered)
                         {
                             bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
@@ -244,6 +244,7 @@ public class Weapon : MonoBehaviour
                         if(mouseInput.x >= magEjectTriggerForce)
                         {
                             network.RPC("CreateAlertRpc", RpcTarget.All, reloadAlert);
+                            network.RPC("ChangeMagVisibleRpc", RpcTarget.Others, false);
 
                             currentMag.transform.parent = null;
                             magRb.constraints = RigidbodyConstraints.None;
@@ -347,6 +348,7 @@ public class Weapon : MonoBehaviour
                         {
                             if (isChambered) StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.25f));
                             else StartCoroutine(SwitchReloadState(ReloadState.BoltOpening, 0.25f));
+                            network.RPC("ChangeMagVisibleRpc", RpcTarget.Others, true);
                             AddBullets();
                         }
                     break;
@@ -401,6 +403,7 @@ public class Weapon : MonoBehaviour
                         {
                             isChambered = true;
                             currentAmmo --;
+                            network.RPC("ChangePosRpc", RpcTarget.Others, "hip");
                             StartCoroutine(SwitchReloadState(ReloadState.ToHipfire, 0.1f));
                         }
                     break;
