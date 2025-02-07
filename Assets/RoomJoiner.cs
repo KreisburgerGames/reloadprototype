@@ -8,9 +8,11 @@ public class RoomJoiner : MonoBehaviourPunCallbacks
 {
     public Button Host, Client;
     public GameObject JoinUI;
-    public GameObject playerPrefab;
-    public Transform spawnPos;
+    public GameObject serverPrefab;
+    public GameObject serverPlayersPrefab;
+    public GameObject playerItemPrefab;
     public GameObject localPlayer { get; private set; }
+    private bool isHost;
 
     void Start()
     {
@@ -27,6 +29,13 @@ public class RoomJoiner : MonoBehaviourPunCallbacks
         PhotonNetwork.JoinLobby();
     }
 
+    public override void OnJoinedLobby()
+    {
+        base.OnJoinedLobby();
+
+        print("Connected");
+    }
+
     void OnDestroy()
     {
         Host.onClick.RemoveListener(StartHost);
@@ -35,13 +44,15 @@ public class RoomJoiner : MonoBehaviourPunCallbacks
 
     private void StartHost()
     {
-        PhotonNetwork.JoinOrCreateRoom("test", null, null);
+        PhotonNetwork.CreateRoom("test", null, null);
+        isHost = true;
         JoinUI.SetActive(false);
     }
 
     private void StartClient()
     {
         PhotonNetwork.JoinRoom("test");
+        isHost = false;
         JoinUI.SetActive(false);
     }
 
@@ -49,8 +60,26 @@ public class RoomJoiner : MonoBehaviourPunCallbacks
     {
         base.OnJoinedRoom();
 
-        GameObject _player = PhotonNetwork.Instantiate(playerPrefab.name, spawnPos.position, Quaternion.identity);
+        if(isHost)
+        {
+            GameObject _server = PhotonNetwork.Instantiate(serverPrefab.name, Vector3.zero, Quaternion.identity);
+            _server.GetComponent<Server>().serverCam = GameObject.FindWithTag("Server Player List");
+            _server.GetComponent<Server>().isOwner = true;
+            PhotonNetwork.Instantiate(serverPlayersPrefab.name, Vector3.zero, Quaternion.identity);
+        }
+
+        StartCoroutine(InitializeName(FindFirstObjectByType<Namer>().CheckName()));
+    }
+
+    private IEnumerator InitializeName(string username)
+    {
+        while(GameObject.FindWithTag("Server Player List") == null) yield return null;
+
+        GameObject _player = PhotonNetwork.Instantiate(playerItemPrefab.name, Vector3.zero, Quaternion.identity);
+        FindAnyObjectByType<Namer>().currentName = FindAnyObjectByType<Namer>().CheckName();
+        _player.GetComponent<PhotonView>().RPC("SetUsername", RpcTarget.AllBuffered, FindAnyObjectByType<Namer>().currentName);
+        _player.GetComponent<PhotonView>().RPC("PushPlayerToUI", RpcTarget.AllBuffered);
+        _player.GetComponent<PlayerItem>().LocalPlayerInit();
         localPlayer = _player;
-        localPlayer.GetComponent<LookAndMove>().IsLocalPlayer = true;
     }
 }

@@ -244,14 +244,13 @@ public class Weapon : MonoBehaviour
                         
                         if(mouseInput.x >= magEjectTriggerForce || Input.GetKeyDown(KeyCode.P))
                         {
-                            network.RPC("CreateAlertRpc", RpcTarget.All, reloadAlert);
-                            network.RPC("ChangeMagVisibleRpc", RpcTarget.Others, false);
-
                             currentMag.transform.parent = null;
                             magRb.constraints = RigidbodyConstraints.None;
                             magRb.AddForce(magEjectDirection * magEjectForce, ForceMode.Impulse);
                             currentAmmo = 0;
                             reloadState = ReloadState.GrabbingMag;
+                            network.RPC("CreateAlertRpc", RpcTarget.All, reloadAlert);
+                            network.RPC("ChangeMagVisibleRpc", RpcTarget.Others, false);
                         }
                     break;
 
@@ -259,11 +258,6 @@ public class Weapon : MonoBehaviour
                         if(Input.GetKey(KeyCode.G)) grabbingInput += Input.GetAxis("Mouse Y");
                         grabbingInput = Mathf.Lerp(grabbingInput, 0, forceReleaseRate * Time.deltaTime);
                         grabbingInput = MathF.Round(grabbingInput, 3);
-
-                        if(!isChambered)
-                        {
-                            bolt.transform.position = Vector3.MoveTowards(bolt.transform.position, lockedBolt.position, lockedBoltSpeed * Time.deltaTime);
-                        }
 
                         if(!isChambered)
                         {

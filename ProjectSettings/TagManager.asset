@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Ground
   - Bullet
+  - Server Player List
+  - SpawnPoints
+  - SpawnPoint
   layers:
   - Default
   - TransparentFX

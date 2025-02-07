@@ -1811,8 +1811,9 @@ MonoBehaviour:
   Host: {fileID: 98327398}
   Client: {fileID: 1068660214}
   JoinUI: {fileID: 590033737}
-  playerPrefab: {fileID: 6179801228217082321, guid: 5b3b373715ac58f43a19811a445944a0, type: 3}
-  spawnPos: {fileID: 16306003}
+  serverPrefab: {fileID: 7661049198204543408, guid: 749333ae55f180e49bf731850b5b28c4, type: 3}
+  serverPlayersPrefab: {fileID: 8579372736394669377, guid: c807b94dac50b0735be98db22780cc0c, type: 3}
+  playerItemPrefab: {fileID: 4131245186440098107, guid: 931e686599249f101891ceae712f408f, type: 3}
 --- !u!4 &2020679038
 Transform:
   m_ObjectHideFlags: 0
