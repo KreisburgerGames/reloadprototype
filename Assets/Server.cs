@@ -56,7 +56,8 @@ public class Server : MonoBehaviour
     {
         foreach(PlayerItem item in FindObjectsOfType<PlayerItem>())
         {
-            item.gameObject.transform.parent = null;
+            item.gameObject.transform.parent = SceneManager.GetSceneAt(0).GetRootGameObjects()[0].transform;
+            item.gameObject.transform.SetParent(null, false);
             DontDestroyOnLoad(item.gameObject);
         }
     }
@@ -77,9 +78,9 @@ public class Server : MonoBehaviour
             }
             if(ready)
             {
+                photonView.RPC("MovePlayerItems", RpcTarget.All);
                 serverState = ServerState.InGame;
                 PhotonNetwork.LoadLevel(1);
-                photonView.RPC("MovePlayerItems", RpcTarget.AllViaServer);
                 StartCoroutine(ShuffleSpawnPoints());
             }
         }
@@ -90,6 +91,7 @@ public class Server : MonoBehaviour
     {
         transform.parent = SceneManager.GetSceneAt(0).GetRootGameObjects()[0].transform;
         transform.parent = null;
+        print("server to game");
 
         if(PhotonNetwork.IsMasterClient)
         {
@@ -112,7 +114,15 @@ public class Server : MonoBehaviour
             spawnPositions[i] = spawnPoints[i].position;
         }
 
+        print("Finalizing");
         FindFirstObjectByType<SpawnPointsHandler>().gameObject.GetComponent<PhotonView>().RPC("SetSpawnPoints", RpcTarget.All, spawnPositions);
+
+        while(gameObject.scene.name != "Game" && FindObjectsOfType<PlayerItem>().Length != PhotonNetwork.PlayerList.Length) yield return null;
+
+        foreach(PlayerItem player in FindObjectsOfType<PlayerItem>())
+        {
+            player.gameObject.GetComponent<PhotonView>().RPC("SpawnPlayer", RpcTarget.All);
+        }
     }
 
     private IEnumerator ShuffleSpawnPoints()

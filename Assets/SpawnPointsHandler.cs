@@ -16,5 +16,6 @@ public class SpawnPointsHandler : MonoBehaviour
         spawnPoints = newSpawnPoints;
         foreach(Vector3 pos in spawnPoints) print(pos);
         isReady = true;
+        print("Ready");
     }
 }

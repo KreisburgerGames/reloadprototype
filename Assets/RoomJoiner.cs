@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Photon.Pun;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +14,7 @@ public class RoomJoiner : MonoBehaviourPunCallbacks
     public GameObject playerItemPrefab;
     public GameObject localPlayer { get; private set; }
     private bool isHost;
+    public GameObject connected;
 
     void Start()
     {
@@ -20,6 +22,11 @@ public class RoomJoiner : MonoBehaviourPunCallbacks
         Client.onClick.AddListener(StartClient);
 
         PhotonNetwork.ConnectUsingSettings();
+    }
+
+    private void Awake() 
+    {
+        DontDestroyOnLoad(gameObject);
     }
 
     public override void OnConnectedToMaster()
@@ -34,6 +41,7 @@ public class RoomJoiner : MonoBehaviourPunCallbacks
         base.OnJoinedLobby();
 
         print("Connected");
+        connected.SetActive(true);
     }
 
     void OnDestroy()

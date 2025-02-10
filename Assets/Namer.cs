@@ -23,6 +23,7 @@ public class Namer : MonoBehaviour
     {
         transform.parent = SceneManager.GetSceneAt(0).GetRootGameObjects()[0].transform;
         transform.parent = null;
+        print("moved namer");
     }
 
     public string CheckName()

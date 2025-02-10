@@ -16,9 +16,7 @@ public class PlayerItem : MonoBehaviour
     private PhotonView network;
     public GameObject playerPrefab;
     private int connectionNumber;
-    private bool spawned;
     public bool isLocalPlayer;
-    private bool moved;
     private SpawnPointsHandler spawnPointsHandler;
 
     void Start()
@@ -27,37 +25,42 @@ public class PlayerItem : MonoBehaviour
         RefreshConnNumber();
     }
 
-    void Update()
+    [PunRPC]
+    public void SpawnPlayer()
     {
         if(!isLocalPlayer) return;
-        Scene gameScene = SceneManager.GetSceneAt(0);
-        if(gameScene.name != "Game") return;
-        GameObject[] roots = gameScene.GetRootGameObjects();
+        StartCoroutine(SyncedSpawn());
+    }
 
-        if(!moved)
+    [PunRPC]
+    public void DDOL()
+    {
+        DontDestroyOnLoad(gameObject);
+    }
+
+    private IEnumerator SyncedSpawn()
+    {
+        DontDestroyOnLoad(this.gameObject);
+        while (SceneManager.GetSceneAt(0).name != "Game") yield return null;
+        GameObject[] roots = SceneManager.GetSceneAt(0).GetRootGameObjects();
+
+        foreach(GameObject root in roots)
         {
-            foreach(GameObject root in roots)
+            if(root.GetComponent<SpawnPointsHandler>() != null)
             {
-                if(root.GetComponent<SpawnPointsHandler>() != null)
-                {
-                    spawnPointsHandler = root.GetComponent<SpawnPointsHandler>();
-                    MoveToGame();
-                    moved = true;
-                    break;
-                }
+                spawnPointsHandler = root.GetComponent<SpawnPointsHandler>();
+                MoveToGame();
+                print("Moving to game");
+                break;
             }
         }
-        if(moved && spawnPointsHandler != null && !spawned && spawnPointsHandler.isReady)
-        {
-            spawned = true;
-            Vector3 spawnPos = spawnPointsHandler.spawnPoints[connectionNumber];
-            GameObject player = PhotonNetwork.Instantiate(playerPrefab.name, spawnPos, Quaternion.identity);
-            LookAndMove playerRef = player.GetComponent<LookAndMove>();
-            playerRef.IsLocalPlayer = true;
-            FindFirstObjectByType<Namer>().localPlayerRef = player;
-            print("e");
-            //PhotonNetwork.Destroy(gameObject);
-        }
+
+        Vector3 spawnPos = spawnPointsHandler.spawnPoints[connectionNumber];
+        GameObject player = PhotonNetwork.Instantiate(playerPrefab.name, spawnPos, Quaternion.identity);
+        LookAndMove playerRef = player.GetComponent<LookAndMove>();
+        playerRef.IsLocalPlayer = true;
+        FindFirstObjectByType<Namer>().localPlayerRef = player;
+        print("e");
     }
 
     private void RefreshConnNumber()
@@ -73,8 +76,10 @@ public class PlayerItem : MonoBehaviour
     private void MoveToGame()
     {
         FindAnyObjectByType<Namer>().MoveToGame();
+        print("moving namer");
         transform.parent = SceneManager.GetSceneAt(0).GetRootGameObjects()[0].transform;
         transform.parent = null;
+        print("moved self");
     }
 
     [PunRPC]
