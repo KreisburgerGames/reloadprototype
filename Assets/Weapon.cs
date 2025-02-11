@@ -72,6 +72,7 @@ public class Weapon : MonoBehaviour
     public float boltReleaseForce;
     private string reloadAlert;
     private LookAndMove playerMovement;
+    public float minDamage, maxDamage;
 
 
     void Start()
@@ -133,7 +134,11 @@ public class Weapon : MonoBehaviour
             RaycastHit hit;
             if(Physics.Raycast(head.position, head.forward, out hit, range))
             {
-                
+                if(hit.collider.gameObject.tag == "Player")
+                {
+                    PhotonView playerNetwork = hit.collider.gameObject.GetComponent<PhotonView>();
+                    playerNetwork.RPC("TakeDamage", RpcTarget.All, UnityEngine.Random.Range(minDamage, maxDamage));
+                }
             }
             recoil.RecoilStart();
             if(isAutomatic)

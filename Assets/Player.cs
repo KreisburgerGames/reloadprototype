@@ -11,10 +11,18 @@ public class Player : MonoBehaviour
     [SerializeField] private GameObject alertPrefab;
     private LookAndMove playerMovement;
     public ThirdPersonWeaponManager manager;
+    public float health = 100f;
 
     void Start()
     {
         playerMovement = GetComponent<LookAndMove>();
+    }
+
+    [PunRPC]
+    public void TakeDamage(float damage)
+    {
+        health -= damage;
+        print(health);
     }
 
     [PunRPC]

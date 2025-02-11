@@ -452,7 +452,7 @@ MonoBehaviour:
   isReloading: 0
   currentMag: {fileID: 7606945068044217553}
   isAutomatic: 1
-  range: 15
+  range: 112.3
   head: {fileID: 6085013550782001463}
   magSize: 30
   ammoReserve: 150
@@ -483,6 +483,8 @@ MonoBehaviour:
   boltReleasedSpeed: 5
   canBoltRelease: 1
   boltReleaseForce: 3
+  minDamage: 5
+  maxDamage: 10
 --- !u!114 &5688318218778469406
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1955,7 +1957,7 @@ GameObject:
   - component: {fileID: 4934556138434029329}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2160,6 +2162,7 @@ MonoBehaviour:
   alertViewport: {fileID: 1623724844444848101}
   alertPrefab: {fileID: 3049313671046128247, guid: 4e7ee13271d066543b33846de5f3aaeb, type: 3}
   manager: {fileID: 1708379475875457283}
+  health: 100
 --- !u!1 &6609984842811943020
 GameObject:
   m_ObjectHideFlags: 0
