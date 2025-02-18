@@ -43,18 +43,24 @@ public class PlayerItem : MonoBehaviour
         DontDestroyOnLoad(this.gameObject);
         while (SceneManager.GetSceneAt(0).name != "Game") yield return null;
         GameObject[] roots = SceneManager.GetSceneAt(0).GetRootGameObjects();
-
-        foreach(GameObject root in roots)
+        
+        bool ready = false;
+        while(!ready)
         {
-            if(root.GetComponent<SpawnPointsHandler>() != null)
+            foreach(GameObject root in roots)
             {
-                spawnPointsHandler = root.GetComponent<SpawnPointsHandler>();
-                MoveToGame();
-                print("Moving to game");
-                break;
+                if(root.GetComponentInChildren<SpawnPointsHandler>() != null)
+                {
+                    ready = true;
+                    spawnPointsHandler = root.GetComponentInChildren<SpawnPointsHandler>();
+                    MoveToGame();
+                    print("Moving to game");
+                    break;
+                }
             }
+            yield return null;
         }
-
+        
         Vector3 spawnPos = spawnPointsHandler.spawnPoints[connectionNumber];
         GameObject player = PhotonNetwork.Instantiate(playerPrefab.name, spawnPos, Quaternion.identity);
         LookAndMove playerRef = player.GetComponent<LookAndMove>();

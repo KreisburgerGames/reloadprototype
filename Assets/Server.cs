@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class Server : MonoBehaviour
 {
@@ -11,7 +12,6 @@ public class Server : MonoBehaviour
     public bool isOwner;
     private ServerState serverState = ServerState.Lobby;
     private PhotonView photonView;
-    private bool allPlayersSpawned = false;
     public List<Transform> spawnPoints = new List<Transform>();
 
     static T[] ShuffleArray<T>(T[] array)
@@ -56,7 +56,7 @@ public class Server : MonoBehaviour
     {
         foreach(PlayerItem item in FindObjectsOfType<PlayerItem>())
         {
-            item.gameObject.transform.parent = SceneManager.GetSceneAt(0).GetRootGameObjects()[0].transform;
+            item.gameObject.transform.SetParent(SceneManager.GetSceneAt(0).GetRootGameObjects()[0].transform, false);
             item.gameObject.transform.SetParent(null, false);
             DontDestroyOnLoad(item.gameObject);
         }
@@ -79,9 +79,9 @@ public class Server : MonoBehaviour
             if(ready)
             {
                 photonView.RPC("MovePlayerItems", RpcTarget.All);
-                serverState = ServerState.InGame;
                 PhotonNetwork.LoadLevel(1);
                 StartCoroutine(ShuffleSpawnPoints());
+                serverState = ServerState.InGame;
             }
         }
     }
@@ -101,7 +101,11 @@ public class Server : MonoBehaviour
 
     private IEnumerator SetSpawnPoints()
     {
-        while(FindFirstObjectByType<SpawnPointsHandler>() == null) yield return null;
+        while(FindFirstObjectByType<SpawnPointsHandler>() == null)
+        {
+            print("searching");
+            yield return null;
+        }
 
         foreach(Transform spawnPoint in FindFirstObjectByType<SpawnPointsHandler>().spawnPointsRaw) spawnPoints.Add(spawnPoint.transform);
 
@@ -123,6 +127,9 @@ public class Server : MonoBehaviour
         {
             player.gameObject.GetComponent<PhotonView>().RPC("SpawnPlayer", RpcTarget.All);
         }
+
+        serverState = ServerState.InGame;
+        print("start");
     }
 
     private IEnumerator ShuffleSpawnPoints()
@@ -134,7 +141,28 @@ public class Server : MonoBehaviour
 
     private void GameLoopServer()
     {
-        if(!allPlayersSpawned) return;
+        bool isOver = false;
+        foreach(Player player in FindObjectsOfType<Player>())
+        {
+            if(player.health <= 0)
+            {
+                isOver = true;
+            }
+        }
+        if(isOver)
+        {
+            string winner = "";
+            foreach(Player player in FindObjectsOfType<Player>())
+            {
+                if(player.health > 0)
+                {
+                    winner = player.gameObject.GetComponent<LookAndMove>().nametag.text;
+                    break;
+                }
+            }
+            print(winner);
+            serverState = ServerState.AfterGame;
+        }
     }
 
     private void AfterGameHandler()

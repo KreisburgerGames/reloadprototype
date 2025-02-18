@@ -2162,7 +2162,7 @@ MonoBehaviour:
   alertViewport: {fileID: 1623724844444848101}
   alertPrefab: {fileID: 3049313671046128247, guid: 4e7ee13271d066543b33846de5f3aaeb, type: 3}
   manager: {fileID: 1708379475875457283}
-  health: 100
+  health: 500
 --- !u!1 &6609984842811943020
 GameObject:
   m_ObjectHideFlags: 0
